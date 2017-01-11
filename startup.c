@@ -141,7 +141,20 @@ void shell(char *tty) {
 	}
 }	
 
-
+pid_t terminal_setup(void) {
+	pid_t childpid = fork();
+	if ((childpid == 0)||(childpid == -1)) {
+		pid_t pids[1];
+		const char font[] = "ter-112n";
+		pids[0] = simplecmd("/bin/loadkeys","fi-latin9");
+		waitpid(pids[0], NULL, 0);
+		pids[0] = simplecmd("/usr/bin/unicode_start", font);
+		waitpid(pids[0], NULL, 0);
+		if (childpid == 0) { exit(0); } else { childpid=0; }
+	}
+	setenv("LANG","en_US.UTF-8", 1);
+	return childpid;
+}
 
 int main(void) {
 	const char nameofme[] = "laptop";
@@ -152,8 +165,7 @@ int main(void) {
 	simplecmd("/usr/bin/setleds", "+scroll");
 	pids[0] = spawnmount("/proc"+1,"/proc","/proc"+1,0,"");
 	pids[1] = simplecmd("/sbin/hwclock", "-s");
-	simplecmd("/bin/loadkeys","fi-latin9");
-	pids[3] = simplecmd("/usr/bin/setfont","ter-112n");
+	pids[3] = terminal_setup();
 	myswapon();
 	waitpid(pids[1],NULL,0); /* e2fsck needs hwclock */
 	pids[4] = e2fsck(homepart);
